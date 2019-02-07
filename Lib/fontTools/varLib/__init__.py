@@ -437,13 +437,22 @@ def _merge_TTHinting(font, masterModel, master_ttfs, tolerance=0.5):
 		cvar.variations.append(var)
 
 def _add_HVAR(font, masterModel, master_ttfs, axisTags):
+	_add_VHVAR(font, masterModel, master_ttfs,
+					axisTags, 'HVAR', 'hmtx')
 
-	log.info("Generating HVAR")
+def _add_VVAR(font, masterModel, master_ttfs, axisTags):
+	_add_VHVAR(font, masterModel, master_ttfs,
+					axisTags, 'VVAR', 'vmtx')
+
+def _add_VHVAR(font, masterModel, master_ttfs,
+				axisTags, table_tag, metrics_tag):
+
+	log.info("Generating " + table_tag)
 
 	glyphOrder = font.getGlyphOrder()
 
 	hAdvanceDeltasAndSupports = {}
-	metricses = [m["hmtx"].metrics for m in master_ttfs]
+	metricses = [m[metrics_tag].metrics for m in master_ttfs]
 	for glyph in glyphOrder:
 		hAdvances = [metrics[glyph][0] if glyph in metrics else None for metrics in metricses]
 		hAdvanceDeltasAndSupports[glyph] = masterModel.getDeltasAndSupports(hAdvances)
@@ -491,17 +500,18 @@ def _add_HVAR(font, masterModel, master_ttfs, axisTags):
 		use_direct = directSize < indirectSize
 
 	# Done; put it all together.
-	assert "HVAR" not in font
-	HVAR = font["HVAR"] = newTable('HVAR')
-	hvar = HVAR.table = ot.HVAR()
-	hvar.Version = 0x00010000
-	hvar.LsbMap = hvar.RsbMap = None
+	assert table_tag not in font
+	VHVAR = font[table_tag] = newTable(table_tag)
+	table_class = getattr(ot, table_tag)
+	vhvar = VHVAR.table = table_class()
+	vhvar.Version = 0x00010000
+	vhvar.LsbMap = vhvar.RsbMap = None
 	if use_direct:
-		hvar.VarStore = directStore
-		hvar.AdvWidthMap = None
+		vhvar.VarStore = directStore
+		vhvar.AdvWidthMap = None
 	else:
-		hvar.VarStore = indirectStore
-		hvar.AdvWidthMap = advanceMapping
+		vhvar.VarStore = indirectStore
+		vhvar.AdvWidthMap = advanceMapping
 
 def _add_MVAR(font, masterModel, master_ttfs, axisTags):
 
@@ -812,6 +822,8 @@ def build(designspace, master_finder=lambda s:s, exclude=[], optimize=True):
 		_add_MVAR(vf, model, master_fonts, axisTags)
 	if 'HVAR' not in exclude:
 		_add_HVAR(vf, model, master_fonts, axisTags)
+	if 'VVAR' not in exclude and 'vmtx' in vf:
+		_add_VVAR(vf, model, master_fonts, axisTags)
 	if 'GDEF' not in exclude or 'GPOS' not in exclude:
 		_merge_OTL(vf, model, master_fonts, axisTags)
 	if 'gvar' not in exclude and 'glyf' in vf:
