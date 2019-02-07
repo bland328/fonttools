@@ -244,6 +244,23 @@ class BuildTest(unittest.TestCase):
         self.expect_ttx(varfont, expected_ttx_path, tables)
         self.check_ttx_dump(varfont, expected_ttx_path, tables, suffix)
 
+    def test_varlib_build_CFF2_VVAR(self):
+        ds_path = self.get_test_input('Test-VVAR-CFF2VF.designspace')
+        suffix = '.otf'
+        expected_ttx_name = 'Test-VVAR-CFF2VF'
+        tables = ["fvar", "htmx", "HVAR", "vmtx", "VVAR", "CFF2"]
+
+        finder = lambda s: s.replace('.ufo', suffix)
+        varfont, model, _ = build(ds_path, finder)
+        # some data (e.g. counts printed in TTX inline comments) is only
+        # calculated at compile time, so before we can compare the TTX
+        # dumps we need to save to a temporary stream, and realod the font
+        varfont = reload_font(varfont)
+
+        expected_ttx_path = self.get_test_output(expected_ttx_name + '.ttx')
+        self.expect_ttx(varfont, expected_ttx_path, tables)
+        self.check_ttx_dump(varfont, expected_ttx_path, tables, suffix)
+
     def test_varlib_main_ttf(self):
         """Mostly for testing varLib.main()
         """

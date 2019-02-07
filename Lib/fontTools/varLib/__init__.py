@@ -451,24 +451,29 @@ def _add_VHVAR(font, masterModel, master_ttfs,
 
 	glyphOrder = font.getGlyphOrder()
 
-	hAdvanceDeltasAndSupports = {}
+	vhAdvanceDeltasAndSupports = {}
 	metricses = [m[metrics_tag].metrics for m in master_ttfs]
 	for glyph in glyphOrder:
-		hAdvances = [metrics[glyph][0] if glyph in metrics else None for metrics in metricses]
-		hAdvanceDeltasAndSupports[glyph] = masterModel.getDeltasAndSupports(hAdvances)
+		vhAdvances = [metrics[glyph][0] if glyph in metrics else None for metrics in metricses]
+		vhAdvanceDeltasAndSupports[glyph] = masterModel.getDeltasAndSupports(vhAdvances)
 
-	singleModel = models.allEqual(id(v[1]) for v in hAdvanceDeltasAndSupports.values())
+	singleModel = models.allEqual(id(v[1]) for v in vhAdvanceDeltasAndSupports.values())
 
+	if table_tag == 'VVAR' and 'CFF ' in master_ttfs[0]:
+		vorg = master_ttfs[0]['VORG']
+		import pdb
+		pdb.set_trace()
+		print["Hello"]
 	directStore = None
 	if singleModel:
 		# Build direct mapping
 
-		supports = next(iter(hAdvanceDeltasAndSupports.values()))[1][1:]
+		supports = next(iter(vhAdvanceDeltasAndSupports.values()))[1][1:]
 		varTupleList = builder.buildVarRegionList(supports, axisTags)
 		varTupleIndexes = list(range(len(supports)))
 		varData = builder.buildVarData(varTupleIndexes, [], optimize=False)
 		for glyphName in glyphOrder:
-			varData.addItem(hAdvanceDeltasAndSupports[glyphName][0])
+			varData.addItem(vhAdvanceDeltasAndSupports[glyphName][0])
 		varData.optimize()
 		directStore = builder.buildVarStore(varTupleList, [varData])
 
@@ -476,7 +481,7 @@ def _add_VHVAR(font, masterModel, master_ttfs,
 	storeBuilder = varStore.OnlineVarStoreBuilder(axisTags)
 	mapping = {}
 	for glyphName in glyphOrder:
-		deltas,supports = hAdvanceDeltasAndSupports[glyphName]
+		deltas,supports = vhAdvanceDeltasAndSupports[glyphName]
 		storeBuilder.setSupports(supports)
 		mapping[glyphName] = storeBuilder.storeDeltas(deltas)
 	indirectStore = storeBuilder.finish()
