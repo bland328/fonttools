@@ -43,8 +43,7 @@ def programToCommands(program, deltasToSourceValues=None, num_regions=0):
 	stack = []
 	seen_blend = False
 	seen_op = False
-	if num_regions != 0:
-		num_sources = num_regions + 1
+	num_sources = num_regions + 1
 
 	it = iter(program)
 	for token in it:
